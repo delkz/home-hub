@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum InventoryStatus {
+  OK
+  LOW
+  EMPTY
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  houseName String   @map("house_name") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model HouseInventory {
+  id            String          @id @default(cuid())
+  name          String          @db.VarChar(255)
+  description   String?         @db.Text
+  quantity      Decimal         @default(0) @db.Decimal(10, 2)
+  unit          String          @default("unit") @db.VarChar(30)
+  status        InventoryStatus @default(OK)
+  minQuantity   Decimal?        @db.Decimal(10, 2)
+  lastUpdatedAt DateTime        @default(now()) @map("last_updated_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([name])
+  @@map("house_inventory")
+}
