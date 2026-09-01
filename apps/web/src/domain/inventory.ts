@@ -22,7 +22,11 @@ export type CreateInventoryItemInput = {
   minQuantity?: number | null;
 };
 
+export type UpdateInventoryItemInput = CreateInventoryItemInput;
+
 export interface InventoryRepository {
   list(): Promise<InventoryItem[]>;
   create(input: CreateInventoryItemInput): Promise<InventoryItem>;
+  update(id: string, input: UpdateInventoryItemInput): Promise<InventoryItem>;
+  delete(id: string): Promise<void>;
 }

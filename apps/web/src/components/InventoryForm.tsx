@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import type { CreateInventoryItemInput, InventoryStatus } from '../domain/inventory';
+import { useEffect } from 'react';
+import type { CreateInventoryItemInput, InventoryItem, InventoryStatus } from '../domain/inventory';
 
 type InventoryFormProps = {
   onSubmit: (input: CreateInventoryItemInput) => Promise<void>;
+  initialItem?: InventoryItem | null;
+  onCancel?: () => void;
   submitting?: boolean;
 };
 
@@ -15,8 +18,23 @@ const defaultForm = {
   minQuantity: 0,
 };
 
-export function InventoryForm({ onSubmit, submitting = false }: InventoryFormProps) {
+export function InventoryForm({ initialItem, onSubmit, onCancel, submitting = false }: InventoryFormProps) {
   const [form, setForm] = useState(defaultForm);
+
+  useEffect(() => {
+    setForm(
+      initialItem
+        ? {
+            name: initialItem.name,
+            description: initialItem.description || '',
+            quantity: initialItem.quantity,
+            unit: initialItem.unit,
+            status: initialItem.status,
+            minQuantity: initialItem.minQuantity || 0,
+          }
+        : defaultForm,
+    );
+  }, [initialItem]);
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -41,7 +59,9 @@ export function InventoryForm({ onSubmit, submitting = false }: InventoryFormPro
       minQuantity: form.minQuantity || null,
     });
 
-    setForm(defaultForm);
+    if (!initialItem) {
+      setForm(defaultForm);
+    }
   };
 
   return (
@@ -114,8 +134,13 @@ export function InventoryForm({ onSubmit, submitting = false }: InventoryFormPro
       </label>
 
       <button type="submit" className="submit-button" disabled={submitting}>
-        {submitting ? 'Saving...' : 'Add item'}
+        {submitting ? 'Saving...' : initialItem ? 'Save changes' : 'Add item'}
       </button>
+      {initialItem && onCancel ? (
+        <button type="button" className="cancel-button" onClick={onCancel} disabled={submitting}>
+          Cancel editing
+        </button>
+      ) : null}
     </form>
   );
 }
