@@ -94,41 +94,28 @@ The first functional version of the system.
 
 This version is intended to validate the data model and the user experience before any automation or AI layer is added.
 
-### v0.2.0 — Assistant and basic intelligence
-
-Add an optional LLM integration.
-
-The AI should not be responsible for the core system operation; it should instead act as a layer on top of the existing data.
-
-Possible capabilities:
-
-- Chat with inventory data
-- Purchase suggestions
-- Identification of likely low-stock items
-- Inventory summaries
-- Recommendations based on consumption history
-- Shopping list generation
-
-Examples:
-
-- Which products will I probably need to buy this week?
-- Am I running out of anything?
-- What do I buy most often?
-- What can I buy to improve my meals for the week?
-- Build a shopping list based on what I already have at home.
-
-Initial integrations may use a local model or a provider with a free tier. The integration should be abstracted behind a provider-independent interface to make it easy to swap models later.
-
-### v0.3.0 — Shopping list module
+### v0.2.0 — Shopping list module
 
 Create a dedicated shopping workflow.
 
-#### Features
+The first iteration should work without AI and provide a fast way to take the household needs into another app or conversation.
+
+#### Initial version
+
+- "Generate shopping list" button
+- Generate a plain-text list from items that need restocking
+- Present the generated text for review
+- Copy the list to the clipboard
+- Keep the output simple enough to paste into notes or messaging apps
+
+#### Planned evolution
 
 - Shopping list management
 - Manual item add
 - Automatic addition of low-stock items
+- Dedicated checklist screen
 - Mark items as purchased
+- Export the checklist as plain text
 - Automatically create inventory entries when marked as bought
 - Purchase history
 - Price paid
@@ -137,6 +124,31 @@ Create a dedicated shopping workflow.
 This creates a natural lifecycle:
 
 Inventory → need → shopping list → purchase → inventory
+
+### v0.3.0 — Assistant and basic intelligence
+
+Add an optional LLM integration.
+
+The AI should not be responsible for the core system operation; it should instead act as a layer on top of the existing data and shopping list workflow.
+
+Possible capabilities:
+
+- Chat with inventory data
+- Purchase suggestions
+- Identification of likely low-stock items
+- Inventory summaries
+- Recommendations based on consumption history
+- Enrichment of shopping lists
+
+Examples:
+
+- Which products will I probably need to buy this week?
+- Am I running out of anything?
+- What do I buy most often?
+- What can I buy to improve my meals for the week?
+- Improve my shopping list based on what I already have at home.
+
+Initial integrations may use a local model or a provider with a free tier. The integration should be abstracted behind a provider-independent interface to make it easy to swap models later.
 
 ### v0.4.0 — Consumption and forecasting
 

@@ -16,6 +16,10 @@ export class InventoryService {
     return this.repository.list();
   }
 
+  async listCategories() {
+    return this.repository.listCategories();
+  }
+
   async createItem(input: CreateInventoryItemInput): Promise<InventoryItem> {
     return this.repository.create(input);
   }
@@ -39,6 +43,7 @@ export class InventoryService {
       unit: item.unit,
       status,
       minQuantity: item.minQuantity,
+      categoryId: item.categoryId,
     });
   }
 }

@@ -18,7 +18,7 @@ export function HomePage({ inventory }: HomePageProps) {
 
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase('pt-BR')
   const visibleItems = normalizedSearch
-    ? inventory.items.filter((item) => `${item.name} ${item.description ?? ''} ${item.unit}`.toLocaleLowerCase('pt-BR').includes(normalizedSearch))
+    ? inventory.items.filter((item) => `${item.name} ${item.description ?? ''} ${item.unit} ${item.category?.name ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedSearch))
     : inventory.items
 
   return (

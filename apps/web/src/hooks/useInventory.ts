@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { InventoryService } from '../application/InventoryService'
-import type { CreateInventoryItemInput, InventoryItem } from '../domain/inventory'
+import type { CreateInventoryItemInput, InventoryCategory, InventoryItem } from '../domain/inventory'
 import { HttpInventoryRepository } from '../infrastructure/HttpInventoryRepository'
 
 const inventoryService = new InventoryService(new HttpInventoryRepository())
 
 export function useInventory() {
   const [items, setItems] = useState<InventoryItem[]>([])
+  const [categories, setCategories] = useState<InventoryCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [busyItemId, setBusyItemId] = useState<string | null>(null)
@@ -16,7 +17,12 @@ export function useInventory() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      setItems(await inventoryService.listItems())
+      const [nextItems, nextCategories] = await Promise.all([
+        inventoryService.listItems(),
+        inventoryService.listCategories(),
+      ])
+      setItems(nextItems)
+      setCategories(nextCategories)
       setError(null)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Não foi possível carregar o inventário.')
@@ -28,10 +34,11 @@ export function useInventory() {
   useEffect(() => {
     let cancelled = false
 
-    void inventoryService.listItems()
-      .then((data) => {
+    void Promise.all([inventoryService.listItems(), inventoryService.listCategories()])
+      .then(([nextItems, nextCategories]) => {
         if (cancelled) return
-        setItems(data)
+        setItems(nextItems)
+        setCategories(nextCategories)
         setError(null)
       })
       .catch((caught: unknown) => {
@@ -100,7 +107,7 @@ export function useInventory() {
     ok: items.filter((item) => item.status === 'OK').length,
   }), [items])
 
-  return { items, summary, loading, saving, busyItemId, error, mutationError, load, save, remove, adjust }
+  return { items, categories, summary, loading, saving, busyItemId, error, mutationError, load, save, remove, adjust }
 }
 
 export type InventoryController = ReturnType<typeof useInventory>

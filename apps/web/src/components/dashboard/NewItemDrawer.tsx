@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import type { CreateInventoryItemInput, InventoryItem, InventoryStatus } from '../../domain/inventory'
+import type { CreateInventoryItemInput, InventoryCategory, InventoryItem, InventoryStatus } from '../../domain/inventory'
 import { useUIStore } from '../../store/uiStore'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -8,6 +8,7 @@ import { Select } from '../ui/Select'
 
 type NewItemDrawerProps = {
   item?: InventoryItem
+  categories: InventoryCategory[]
   saving: boolean
   error?: string | null
   onSubmit: (input: CreateInventoryItemInput, itemId?: string) => Promise<unknown>
@@ -21,10 +22,11 @@ function initialForm(item?: InventoryItem) {
     unit: item?.unit ?? 'un',
     minQuantity: item?.minQuantity === null || item?.minQuantity === undefined ? '' : String(item.minQuantity),
     status: item?.status ?? 'OK' as InventoryStatus,
+    categoryId: item?.categoryId ?? '',
   }
 }
 
-export function NewItemDrawer({ item, saving, error, onSubmit }: NewItemDrawerProps) {
+export function NewItemDrawer({ item, categories, saving, error, onSubmit }: NewItemDrawerProps) {
   const open = useUIStore((state) => state.activeDrawer === 'inventory-item')
   const closeDrawer = useUIStore((state) => state.closeDrawer)
   const [form, setForm] = useState(() => initialForm(item))
@@ -59,6 +61,7 @@ export function NewItemDrawer({ item, saving, error, onSubmit }: NewItemDrawerPr
         unit: form.unit,
         minQuantity: form.minQuantity === '' ? null : Number(form.minQuantity),
         status: form.status,
+        categoryId: form.categoryId || null,
       }, item?.id)
       closeDrawer()
     } catch {
@@ -77,6 +80,10 @@ export function NewItemDrawer({ item, saving, error, onSubmit }: NewItemDrawerPr
         <form className="grid gap-4" onSubmit={handleSubmit}>
           <Input id="item-name" label="Nome do item" placeholder="Ex.: Café" value={form.name} onChange={(event) => update('name', event.target.value)} required />
           <Input id="item-description" label="Descrição" placeholder="Ex.: Despensa da cozinha" value={form.description} onChange={(event) => update('description', event.target.value)} />
+          <Select id="item-category" label="Categoria" value={form.categoryId} onChange={(event) => update('categoryId', event.target.value)}>
+            <option value="">Sem categoria</option>
+            {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+          </Select>
           <div className="grid grid-cols-2 gap-3">
             <Input id="item-quantity" label="Quantidade" type="number" min="0" step="0.01" value={form.quantity} onChange={(event) => update('quantity', event.target.value)} />
             <Select id="item-unit" label="Unidade" value={form.unit} onChange={(event) => update('unit', event.target.value)}><option value="un">un</option><option value="kg">kg</option><option value="g">g</option><option value="l">l</option><option value="ml">ml</option><option value="pct">pacote</option></Select>

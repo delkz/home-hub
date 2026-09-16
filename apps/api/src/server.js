@@ -81,10 +81,26 @@ app.put('/api/settings', async (req, res) => {
   }
 });
 
+app.get('/api/categories', async (_req, res) => {
+  try {
+    const categories = await prisma.category.findMany({
+      orderBy: { name: 'asc' },
+    });
+
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Unable to fetch categories',
+      error: error.message,
+    });
+  }
+});
+
 app.get('/api/inventory', async (_req, res) => {
   try {
     const items = await prisma.houseInventory.findMany({
       orderBy: { updatedAt: 'desc' },
+      include: { category: true },
     });
 
     res.json(items.map(serializeInventory));
@@ -102,6 +118,7 @@ app.get('/api/inventory/:id', async (req, res) => {
 
     const item = await prisma.houseInventory.findUnique({
       where: { id },
+      include: { category: true },
     });
 
     if (!item) {
@@ -126,6 +143,7 @@ app.post('/api/inventory', async (req, res) => {
       unit = 'unit',
       status = 'OK',
       minQuantity,
+      categoryId,
     } = req.body;
 
     if (!name || String(name).trim() === '') {
@@ -146,8 +164,10 @@ app.post('/api/inventory', async (req, res) => {
         unit: String(unit),
         status: normalizedStatus,
         minQuantity: minQuantity === undefined || minQuantity === null ? null : Number(minQuantity),
+        categoryId: categoryId ? String(categoryId) : null,
         lastUpdatedAt: new Date(),
       },
+      include: { category: true },
     });
 
     res.status(201).json(serializeInventory(item));
@@ -162,7 +182,7 @@ app.post('/api/inventory', async (req, res) => {
 app.put('/api/inventory/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, quantity, unit, status, minQuantity } = req.body;
+    const { name, description, quantity, unit, status, minQuantity, categoryId } = req.body;
 
     const existing = await prisma.houseInventory.findUnique({
       where: { id },
@@ -187,8 +207,10 @@ app.put('/api/inventory/:id', async (req, res) => {
         unit: unit === undefined ? existing.unit : String(unit),
         status: nextStatus,
         minQuantity: minQuantity === undefined ? existing.minQuantity : minQuantity === null ? null : Number(minQuantity),
+        categoryId: categoryId === undefined ? existing.categoryId : categoryId ? String(categoryId) : null,
         lastUpdatedAt: new Date(),
       },
+      include: { category: true },
     });
 
     res.json(serializeInventory(updated));

@@ -29,7 +29,7 @@ function App() {
       </div>
 
       <BottomNavigation />
-      <NewItemDrawer key={editingItem?.id ?? 'new-item'} item={editingItem} saving={inventory.saving} error={inventory.mutationError} onSubmit={inventory.save} />
+      <NewItemDrawer key={editingItem?.id ?? 'new-item'} item={editingItem} categories={inventory.categories} saving={inventory.saving} error={inventory.mutationError} onSubmit={inventory.save} />
     </div>
   )
 }

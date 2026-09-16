@@ -1,5 +1,6 @@
 import type {
   CreateInventoryItemInput,
+  InventoryCategory,
   InventoryItem,
   InventoryRepository,
   UpdateInventoryItemInput,
@@ -13,6 +14,16 @@ export class HttpInventoryRepository implements InventoryRepository {
 
     if (!response.ok) {
       throw new Error('Failed to load inventory');
+    }
+
+    return response.json();
+  }
+
+  async listCategories(): Promise<InventoryCategory[]> {
+    const response = await fetch(`${API_BASE_URL}/categories`);
+
+    if (!response.ok) {
+      throw new Error('Failed to load categories');
     }
 
     return response.json();

@@ -30,11 +30,24 @@ model HouseInventory {
   unit          String          @default("unit") @db.VarChar(30)
   status        InventoryStatus @default(OK)
   minQuantity   Decimal?        @db.Decimal(10, 2)
+  categoryId    String?         @map("category_id")
+  category      Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   lastUpdatedAt DateTime        @default(now()) @map("last_updated_at")
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
   @@index([status])
   @@index([name])
+  @@index([categoryId])
   @@map("house_inventory")
+}
+
+model Category {
+  id        String           @id @default(cuid())
+  name      String           @unique @db.VarChar(80)
+  items     HouseInventory[]
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@map("categories")
 }

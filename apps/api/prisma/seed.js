@@ -13,6 +13,18 @@ async function main() {
     });
   }
 
+  const categoryNames = ['Alimentos', 'Limpeza', 'Higiene', 'Casa', 'Outros'];
+
+  for (const name of categoryNames) {
+    await prisma.category.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+  }
+
+  const foodCategory = await prisma.category.findUnique({ where: { name: 'Alimentos' } });
+
   const inventoryItems = [
     {
       name: 'Rice',
@@ -21,6 +33,7 @@ async function main() {
       unit: 'kg',
       status: 'OK',
       minQuantity: 2,
+      categoryId: foodCategory?.id,
     },
     {
       name: 'Coffee',
@@ -29,6 +42,7 @@ async function main() {
       unit: 'kg',
       status: 'LOW',
       minQuantity: 1,
+      categoryId: foodCategory?.id,
     },
     {
       name: 'Toilet paper',
