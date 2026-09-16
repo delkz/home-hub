@@ -1,124 +1,37 @@
-import { useEffect, useState } from 'react';
-import { InventoryForm } from './components/InventoryForm';
-import { InventoryTable } from './components/InventoryTable';
-import { InventoryService } from './application/InventoryService';
-import type { CreateInventoryItemInput, InventoryItem } from './domain/inventory';
-import { HttpInventoryRepository } from './infrastructure/HttpInventoryRepository';
-import './App.css';
-
-const inventoryService = new InventoryService(new HttpInventoryRepository());
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { AppHeader } from './components/dashboard/AppHeader'
+import { BottomNavigation } from './components/dashboard/BottomNavigation'
+import { NewItemDrawer } from './components/dashboard/NewItemDrawer'
+import { Sidebar } from './components/dashboard/Sidebar'
+import { useInventory } from './hooks/useInventory'
+import { HomePage } from './pages/HomePage'
+import { InventoryPage } from './pages/InventoryPage'
+import { useUIStore } from './store/uiStore'
 
 function App() {
-  const [items, setItems] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [busyItemId, setBusyItemId] = useState<string | null>(null);
-  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadItems = async () => {
-    try {
-      setLoading(true);
-      const data = await inventoryService.listItems();
-      setItems(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load inventory');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadItems();
-  }, []);
-
-  const handleSubmit = async (input: CreateInventoryItemInput) => {
-    try {
-      setSubmitting(true);
-      setError(null);
-      if (editingItem) {
-        await inventoryService.updateItem(editingItem.id, input);
-        setEditingItem(null);
-      } else {
-        await inventoryService.createItem(input);
-      }
-      await loadItems();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to save item');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleAdjust = async (item: InventoryItem, change: number) => {
-    try {
-      setBusyItemId(item.id);
-      setError(null);
-      await inventoryService.adjustQuantity(item, change);
-      await loadItems();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to adjust quantity');
-    } finally {
-      setBusyItemId(null);
-    }
-  };
-
-  const handleDelete = async (item: InventoryItem) => {
-    if (!window.confirm(`Delete ${item.name}?`)) return;
-
-    try {
-      setBusyItemId(item.id);
-      setError(null);
-      await inventoryService.deleteItem(item.id);
-      if (editingItem?.id === item.id) setEditingItem(null);
-      await loadItems();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to delete item');
-    } finally {
-      setBusyItemId(null);
-    }
-  };
+  const inventory = useInventory()
+  const editingItemId = useUIStore((state) => state.editingItemId)
+  const editingItem = inventory.items.find((item) => item.id === editingItemId)
 
   return (
-    <main className="app-shell">
-      <section className="card">
-        <p className="eyebrow">Home Hub</p>
-        <h1>Household inventory</h1>
-        <p className="subtitle">
-          A simple inventory view for the home, with fast tracking and lightweight item registration.
-        </p>
+    <div className="min-h-screen bg-app p-0 lg:p-6">
+      <div className="mx-auto flex max-w-360 gap-7">
+        <Sidebar />
 
-        <div className="panel-grid">
-          <div className="panel">
-            <h2>{editingItem ? 'Edit item' : 'Add item'}</h2>
-            <InventoryForm
-              initialItem={editingItem}
-              onSubmit={handleSubmit}
-              onCancel={() => setEditingItem(null)}
-              submitting={submitting}
-            />
-          </div>
-
-          <div className="panel">
-            <h2>Inventory</h2>
-            {error ? <p className="error-message">{error}</p> : null}
-            {loading ? (
-              <p>Loading items...</p>
-            ) : (
-              <InventoryTable
-                items={items}
-                busyItemId={busyItemId}
-                onEdit={setEditingItem}
-                onDelete={handleDelete}
-                onAdjust={handleAdjust}
-              />
-            )}
-          </div>
+        <div className="min-w-0 flex-1">
+          <AppHeader />
+          <Routes>
+            <Route path="/" element={<HomePage inventory={inventory} />} />
+            <Route path="/inventory" element={<InventoryPage inventory={inventory} />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
-      </section>
-    </main>
-  );
+      </div>
+
+      <BottomNavigation />
+      <NewItemDrawer key={editingItem?.id ?? 'new-item'} item={editingItem} saving={inventory.saving} error={inventory.mutationError} onSubmit={inventory.save} />
+    </div>
+  )
 }
 
-export default App;
+export default App
