@@ -1,5 +1,7 @@
 import type {
   CreateInventoryItemInput,
+  CreateInventoryMovementInput,
+  CreatePurchaseInput,
   InventoryItem,
   InventoryRepository,
   UpdateInventoryItemInput,
@@ -32,18 +34,25 @@ export class InventoryService {
     return this.repository.delete(id);
   }
 
-  async adjustQuantity(item: InventoryItem, change: number): Promise<InventoryItem> {
-    const quantity = Math.max(0, item.quantity + change);
-    const status = quantity === 0 ? 'EMPTY' : item.minQuantity && quantity <= item.minQuantity ? 'LOW' : 'OK';
+  async listMovements(itemId: string) {
+    return this.repository.listMovements(itemId);
+  }
 
-    return this.updateItem(item.id, {
-      name: item.name,
-      description: item.description || undefined,
-      quantity,
-      unit: item.unit,
-      status,
-      minQuantity: item.minQuantity,
-      categoryId: item.categoryId,
+  async createMovement(input: CreateInventoryMovementInput) {
+    return this.repository.createMovement(input);
+  }
+
+  async createPurchase(input: CreatePurchaseInput) {
+    return this.repository.createPurchase(input);
+  }
+
+  async adjustQuantity(item: InventoryItem, change: number): Promise<InventoryItem> {
+    const result = await this.createMovement({
+      inventoryId: item.id,
+      type: change >= 0 ? 'IN' : 'OUT',
+      quantity: Math.abs(change),
+      notes: 'Ajuste rápido',
     });
+    return result.item;
   }
 }

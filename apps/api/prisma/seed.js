@@ -13,13 +13,19 @@ async function main() {
     });
   }
 
-  const categoryNames = ['Alimentos', 'Limpeza', 'Higiene', 'Casa', 'Outros'];
+  const categories = [
+    { name: 'Alimentos', icon: '🍽️' },
+    { name: 'Limpeza', icon: '🧽' },
+    { name: 'Higiene', icon: '🧴' },
+    { name: 'Casa', icon: '🏠' },
+    { name: 'Outros', icon: '📦' },
+  ];
 
-  for (const name of categoryNames) {
+  for (const category of categories) {
     await prisma.category.upsert({
-      where: { name },
-      update: {},
-      create: { name },
+      where: { name: category.name },
+      update: { icon: category.icon },
+      create: category,
     });
   }
 
@@ -34,6 +40,7 @@ async function main() {
       status: 'OK',
       minQuantity: 2,
       categoryId: foodCategory?.id,
+      icon: foodCategory?.icon,
     },
     {
       name: 'Coffee',
@@ -43,6 +50,7 @@ async function main() {
       status: 'LOW',
       minQuantity: 1,
       categoryId: foodCategory?.id,
+      icon: foodCategory?.icon,
     },
     {
       name: 'Toilet paper',

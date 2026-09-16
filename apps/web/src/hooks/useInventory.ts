@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { InventoryService } from '../application/InventoryService'
-import type { CreateInventoryItemInput, InventoryCategory, InventoryItem } from '../domain/inventory'
+import type { CreateInventoryItemInput, CreateInventoryMovementInput, CreatePurchaseInput, InventoryCategory, InventoryItem } from '../domain/inventory'
 import { HttpInventoryRepository } from '../infrastructure/HttpInventoryRepository'
 
 const inventoryService = new InventoryService(new HttpInventoryRepository())
@@ -10,6 +10,8 @@ export function useInventory() {
   const [categories, setCategories] = useState<InventoryCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [movementSaving, setMovementSaving] = useState(false)
+  const [purchaseSaving, setPurchaseSaving] = useState(false)
   const [busyItemId, setBusyItemId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [mutationError, setMutationError] = useState<string | null>(null)
@@ -100,6 +102,41 @@ export function useInventory() {
     }
   }
 
+  const recordMovement = async (input: CreateInventoryMovementInput) => {
+    setMovementSaving(true)
+    setMutationError(null)
+    try {
+      const result = await inventoryService.createMovement(input)
+      setItems((current) => current.map((item) => item.id === result.item.id ? result.item : item))
+      return result
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'Não foi possível registrar a movimentação.'
+      setMutationError(message)
+      throw caught
+    } finally {
+      setMovementSaving(false)
+    }
+  }
+
+  const listMovements = (itemId: string) => inventoryService.listMovements(itemId)
+
+  const recordPurchase = async (input: CreatePurchaseInput) => {
+    setPurchaseSaving(true)
+    setMutationError(null)
+    try {
+      const result = await inventoryService.createPurchase(input)
+      const updatedById = new Map(result.items.map((item) => [item.id, item]))
+      setItems((current) => current.map((item) => updatedById.get(item.id) ?? item))
+      return result
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'Não foi possível registrar a compra.'
+      setMutationError(message)
+      throw caught
+    } finally {
+      setPurchaseSaving(false)
+    }
+  }
+
   const summary = useMemo(() => ({
     total: items.length,
     low: items.filter((item) => item.status === 'LOW').length,
@@ -107,7 +144,7 @@ export function useInventory() {
     ok: items.filter((item) => item.status === 'OK').length,
   }), [items])
 
-  return { items, categories, summary, loading, saving, busyItemId, error, mutationError, load, save, remove, adjust }
+  return { items, categories, summary, loading, saving, movementSaving, purchaseSaving, busyItemId, error, mutationError, load, save, remove, adjust, recordMovement, recordPurchase, listMovements }
 }
 
 export type InventoryController = ReturnType<typeof useInventory>

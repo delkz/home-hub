@@ -1,4 +1,4 @@
-import { MinusIcon, PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, MinusIcon, PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import type { ReactNode } from 'react'
 import type { InventoryItem } from '../../domain/inventory'
 import { useUIStore } from '../../store/uiStore'
@@ -24,6 +24,7 @@ const statusConfig = {
 
 export function InventoryList({ items, loading, busyItemId, onAdjust, onDelete, title = 'Itens atuais', action }: InventoryListProps) {
   const openEditItem = useUIStore((state) => state.openEditItem)
+  const openMovementHistory = useUIStore((state) => state.openMovementHistory)
 
   const handleDelete = async (item: InventoryItem) => {
     if (window.confirm(`Excluir ${item.name}?`)) await onDelete(item)
@@ -45,12 +46,13 @@ export function InventoryList({ items, loading, busyItemId, onAdjust, onDelete, 
           const busy = busyItemId === item.id
           return (
             <article key={item.id} className="flex flex-wrap items-center gap-3 rounded-control border border-line bg-white px-4 py-3">
-              <span className={`size-8 shrink-0 rounded-xl ${status.dot}`} />
-              <div className="min-w-32 flex-1"><strong className="block text-sm">{item.name}</strong><span className="block truncate text-xs text-muted">{item.quantity} {item.unit}{item.category ? ` · ${item.category.name}` : ''}{item.description ? ` · ${item.description}` : ''}</span></div>
+              <span className={`grid size-10 shrink-0 place-items-center rounded-xl text-xl ${status.dot}`} aria-hidden="true">{item.icon || item.category?.icon || '📦'}</span>
+              <div className="min-w-32 flex-1"><strong className="block text-sm">{item.name}</strong><span className="block truncate text-xs text-muted">{item.quantity} {item.unit}{item.category ? ` · ${item.category.icon} ${item.category.name}` : ''}{item.description ? ` · ${item.description}` : ''}</span>{item.lastPurchaseAt ? <span className="mt-1 block text-[11px] text-muted">Última compra {new Intl.DateTimeFormat('pt-BR').format(new Date(item.lastPurchaseAt))}</span> : null}</div>
               <Tag tone={status.tone}>{status.label}</Tag>
               <div className="ml-auto flex basis-full items-center justify-end gap-2 pt-1 sm:basis-auto sm:pt-0">
                 <Button type="button" variant="secondary" className="h-10 min-h-10 w-10 min-w-10 rounded-full p-0" aria-label={`Diminuir ${item.name}`} disabled={busy || item.quantity <= 0} icon={<MinusIcon className="h-5 w-5 shrink-0 stroke-2" />} onClick={() => void onAdjust(item, -1)} />
                 <Button type="button" variant="secondary" className="h-10 min-h-10 w-10 min-w-10 rounded-full p-0 text-primary" aria-label={`Aumentar ${item.name}`} disabled={busy} icon={<PlusIcon className="h-5 w-5 shrink-0 stroke-2" />} onClick={() => void onAdjust(item, 1)} />
+                <Button type="button" variant="secondary" className="h-10 min-h-10 w-10 min-w-10 rounded-full p-0" aria-label={`Histórico de ${item.name}`} disabled={busy} icon={<ClockIcon className="h-5 w-5 shrink-0 stroke-2" />} onClick={() => openMovementHistory(item.id)} />
                 <Button type="button" variant="secondary" className="h-10 min-h-10 w-10 min-w-10 rounded-full p-0" aria-label={`Editar ${item.name}`} disabled={busy} icon={<PencilSquareIcon className="h-5 w-5 shrink-0 stroke-2" />} onClick={() => openEditItem(item.id)} />
                 <Button type="button" variant="secondary" className="h-10 min-h-10 w-10 min-w-10 rounded-full border-rose-200 p-0 text-rose-600" aria-label={`Excluir ${item.name}`} disabled={busy} icon={<TrashIcon className="h-5 w-5 shrink-0 stroke-2" />} onClick={() => void handleDelete(item)} />
               </div>

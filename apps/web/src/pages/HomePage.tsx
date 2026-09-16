@@ -14,6 +14,7 @@ type HomePageProps = {
 
 export function HomePage({ inventory }: HomePageProps) {
   const openNewItem = useUIStore((state) => state.openNewItem)
+  const openPurchase = useUIStore((state) => state.openPurchase)
   const searchQuery = useUIStore((state) => state.searchQuery)
 
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase('pt-BR')
@@ -42,7 +43,7 @@ export function HomePage({ inventory }: HomePageProps) {
               <h2 className="mb-4 text-lg font-bold">Ações rápidas</h2>
               <div className="grid grid-cols-2 gap-4">
                 <QuickActionCard title="Novo" caption="inventário" icon={PlusIcon} tone="success" onClick={openNewItem} />
-                <QuickActionCard title="Registrar" caption="compra" icon={ShoppingCartIcon} tone="warning" />
+                <QuickActionCard title="Registrar" caption="compra" icon={ShoppingCartIcon} tone="warning" onClick={openPurchase} />
               </div>
             </section>
 

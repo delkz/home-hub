@@ -1,8 +1,13 @@
 import type {
   CreateInventoryItemInput,
+  CreateInventoryMovementInput,
+  CreatePurchaseInput,
   InventoryCategory,
   InventoryItem,
+  InventoryMovement,
+  InventoryMovementResult,
   InventoryRepository,
+  PurchaseResult,
   UpdateInventoryItemInput,
 } from '../domain/inventory';
 
@@ -70,5 +75,41 @@ export class HttpInventoryRepository implements InventoryRepository {
       const error = await response.json().catch(() => ({ message: 'Failed to delete item' }));
       throw new Error(error.message || 'Failed to delete item');
     }
+  }
+
+  async listMovements(itemId: string): Promise<InventoryMovement[]> {
+    const response = await fetch(`${API_BASE_URL}/inventory/${itemId}/movements`);
+    if (!response.ok) throw new Error('Failed to load movement history');
+    return response.json();
+  }
+
+  async createMovement(input: CreateInventoryMovementInput): Promise<InventoryMovementResult> {
+    const response = await fetch(`${API_BASE_URL}/inventory/${input.inventoryId}/movements`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to create movement' }));
+      throw new Error(error.message || 'Failed to create movement');
+    }
+
+    return response.json();
+  }
+
+  async createPurchase(input: CreatePurchaseInput): Promise<PurchaseResult> {
+    const response = await fetch(`${API_BASE_URL}/purchases`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to create purchase' }));
+      throw new Error(error.message || 'Failed to create purchase');
+    }
+
+    return response.json();
   }
 }
