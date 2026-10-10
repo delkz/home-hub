@@ -23,7 +23,7 @@ O Home Hub roda na **Vercel** (front estático + API Express como função serve
    - `DATABASE_URL_UNPOOLED`: string **direta** (sem `-pooler`), com `?sslmode=require`
 2. **Projeto na Vercel:** importe o repositório `delkz/home-hub`. Deixe o *Root Directory* na raiz; o `vercel.json` já define instalação, build e saída. Se a Vercel perguntar o framework, escolha *Other*.
 3. **Variáveis de ambiente** (Settings → Environment Variables, ambiente *Production*):
-   - `NODE_ENV=production`
+   - `NODE_ENV=production` (opcional: a Vercel já usa produção nas funções)
    - `SETUP_TOKEN` (opcional, recomendado): um código qualquer, por exemplo o resultado de `openssl rand -hex 8`. A tela de boas-vindas pede esse código, então ninguém consegue criar a conta antes de você.
    - `SESSION_TTL_DAYS=30` (opcional)
 4. **Deploy.** O build gera o Prisma Client, aplica as migrações no banco e compila o front.
