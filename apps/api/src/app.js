@@ -1,7 +1,6 @@
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
-import { ensureAdminUser } from './auth/bootstrap.js';
 import { requireAuth, requireCsrfHeader } from './auth/middleware.js';
 import { authRouter } from './auth/routes.js';
 import { config } from './lib/config.js';
@@ -493,8 +492,5 @@ app.use((error, _req, res, _next) => {
   if (error.type === 'entity.too.large') return res.status(413).json({ message: 'Request body too large' });
   res.status(500).json({ message: 'Internal server error', error: exposeError(error) });
 });
-
-// Runs once per process (or per cold start on Vercel); a no-op once a user exists.
-await ensureAdminUser();
 
 export default app;

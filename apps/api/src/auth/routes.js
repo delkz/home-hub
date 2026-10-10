@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { MIN_PASSWORD_LENGTH } from '../lib/config.js';
+import { timingSafeEqual } from 'node:crypto';
+import { config, MIN_PASSWORD_LENGTH } from '../lib/config.js';
 import { burnPasswordCheck, hashPassword, verifyPassword } from '../lib/password.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from './middleware.js';
@@ -16,6 +17,86 @@ const loginLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { message: 'Muitas tentativas de login. Tente novamente em alguns minutos.' },
+});
+
+const DEFAULT_CATEGORIES = [
+  { name: 'Alimentos', icon: '🍽️' },
+  { name: 'Limpeza', icon: '🧽' },
+  { name: 'Higiene', icon: '🧴' },
+  { name: 'Casa', icon: '🏠' },
+  { name: 'Outros', icon: '📦' },
+];
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SETUP_LOCK_KEY = 4815162342;
+
+const setupTokenMatches = (provided) => {
+  if (!config.setupToken) return true;
+  const a = Buffer.from(String(provided || ''));
+  const b = Buffer.from(config.setupToken);
+  return a.length === b.length && timingSafeEqual(a, b);
+};
+
+class SetupClosedError extends Error {}
+
+// First-access onboarding: while there are no users, anyone who opens the app
+// can create the (single) admin account. Once it exists, this closes for good.
+authRouter.get('/setup', async (_req, res, next) => {
+  try {
+    const needsSetup = (await prisma.user.count()) === 0;
+    res.json({ needsSetup, requiresToken: needsSetup && Boolean(config.setupToken) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.post('/setup', loginLimiter, async (req, res, next) => {
+  try {
+    const name = String(req.body?.name || '').trim();
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+    const houseName = String(req.body?.houseName || '').trim();
+
+    if (!setupTokenMatches(req.body?.setupToken)) {
+      return res.status(403).json({ message: 'Código de configuração inválido' });
+    }
+    if (!name || name.length > 120) return res.status(400).json({ message: 'Informe seu nome' });
+    if (!EMAIL_PATTERN.test(email) || email.length > 255) return res.status(400).json({ message: 'Informe um e-mail válido' });
+    if (password.length < MIN_PASSWORD_LENGTH || password.length > 1024) {
+      return res.status(400).json({ message: `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres` });
+    }
+    if (houseName.length > 255) return res.status(400).json({ message: 'Nome da casa muito longo' });
+
+    const passwordHash = await hashPassword(password);
+
+    const user = await prisma.$transaction(async (tx) => {
+      // Serializes concurrent setup attempts so only one account can ever be created here.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`;
+      if ((await tx.user.count()) > 0) throw new SetupClosedError();
+
+      const created = await tx.user.create({ data: { name, email, passwordHash, lastLoginAt: new Date() } });
+
+      if (houseName) {
+        const setting = await tx.setting.findFirst();
+        if (setting) await tx.setting.update({ where: { id: setting.id }, data: { houseName } });
+        else await tx.setting.create({ data: { houseName } });
+      }
+
+      if ((await tx.category.count()) === 0) {
+        await tx.category.createMany({ data: DEFAULT_CATEGORIES, skipDuplicates: true });
+      }
+
+      return created;
+    });
+
+    await createSession(res, req, user);
+    res.status(201).json({ user: { id: user.id, email: user.email, name: user.name } });
+  } catch (error) {
+    if (error instanceof SetupClosedError) {
+      return res.status(409).json({ message: 'A conta principal já foi criada. Faça login.' });
+    }
+    next(error);
+  }
 });
 
 const INVALID_CREDENTIALS = { message: 'E-mail ou senha inválidos' };

@@ -32,8 +32,6 @@ services:
       NODE_ENV: development
       PORT: 3001
       DATABASE_URL: postgres://postgres:postgres@db:5432/homehub
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@homehub.local}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-troque-esta-senha}
     volumes:
       - .:/app
       - /app/apps/api/node_modules

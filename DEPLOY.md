@@ -5,7 +5,7 @@ O Home Hub roda na **Vercel** (front estático + API Express como função serve
 ## Como fica a segurança
 
 - **Login obrigatório**: toda a API (`/api/*`) exige sessão, exceto o próprio login.
-- **Sem cadastro público**: o primeiro usuário é criado a partir de `ADMIN_EMAIL` / `ADMIN_PASSWORD` quando o banco ainda não tem nenhum usuário. Outros usuários ou trocas de senha são feitos pelo terminal (veja abaixo).
+- **Sem cadastro público**: enquanto o banco não tem nenhum usuário, o app mostra uma tela de boas-vindas para criar a conta principal. Depois que ela existe, essa tela fecha de vez e só resta o login. Outros usuários ou trocas de senha são feitos pelo terminal (veja abaixo).
 - **Senhas** guardadas com hash `scrypt` (sal aleatório, comparação em tempo constante). Mínimo de 10 caracteres.
 - **Sessões** com token aleatório de 256 bits em cookie `HttpOnly`, `Secure`, `SameSite=Strict`; o banco guarda só o hash SHA-256 do token. Expiram em `SESSION_TTL_DAYS` (padrão 30 dias). Logout apaga a sessão no servidor.
 - **Força bruta**: 10 tentativas de login erradas por IP a cada 15 minutos (contadas por instância da função; veja as observações).
@@ -24,9 +24,10 @@ O Home Hub roda na **Vercel** (front estático + API Express como função serve
 2. **Projeto na Vercel:** importe o repositório `delkz/home-hub`. Deixe o *Root Directory* na raiz; o `vercel.json` já define instalação, build e saída. Se a Vercel perguntar o framework, escolha *Other*.
 3. **Variáveis de ambiente** (Settings → Environment Variables, ambiente *Production*):
    - `NODE_ENV=production`
-   - `ADMIN_EMAIL`, `ADMIN_NAME` e `ADMIN_PASSWORD` (mínimo de 10 caracteres)
+   - `SETUP_TOKEN` (opcional, recomendado): um código qualquer, por exemplo o resultado de `openssl rand -hex 8`. A tela de boas-vindas pede esse código, então ninguém consegue criar a conta antes de você.
    - `SESSION_TTL_DAYS=30` (opcional)
-4. **Deploy.** O build gera o Prisma Client, aplica as migrações no banco e compila o front. No primeiro acesso, a API cria o usuário inicial. Entre em `https://<seu-projeto>.vercel.app` e depois **remova `ADMIN_PASSWORD`** das variáveis.
+4. **Deploy.** O build gera o Prisma Client, aplica as migrações no banco e compila o front.
+5. **Crie sua conta.** Abra `https://<seu-projeto>.vercel.app` logo após o deploy. A tela "Bem-vindo" pede seu nome, e-mail, senha (mínimo de 10 caracteres) e o nome da casa, cria as categorias padrão e já entra no app.
 
 Observações:
 - Cada deploy aplica migrações pendentes no banco configurado. Se usar deploys de *preview*, configure um banco (ou branch do Neon) separado para o ambiente *Preview*.
@@ -41,4 +42,4 @@ Observações:
 
 ## Desenvolvimento local
 
-O `docker-compose.yml` é o ambiente de desenvolvimento (`docker compose up -d`). Ele cria o usuário `admin@homehub.local` / `troque-esta-senha` (ou o que estiver em `ADMIN_EMAIL` / `ADMIN_PASSWORD`) e agora publica o banco e a API só em `127.0.0.1`.
+O `docker-compose.yml` é o ambiente de desenvolvimento (`docker compose up -d`). No primeiro acesso aparece a mesma tela de boas-vindas. Ele publica o banco e a API só em `127.0.0.1`.

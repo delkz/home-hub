@@ -21,9 +21,9 @@ export const config = {
   sessionTtlDays: Number(process.env.SESSION_TTL_DAYS || 30),
   // Secure cookies are only sent over HTTPS. Default on in production.
   cookieSecure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : isProduction,
-  adminEmail: process.env.ADMIN_EMAIL?.trim().toLowerCase() || null,
-  adminPassword: process.env.ADMIN_PASSWORD || null,
-  adminName: process.env.ADMIN_NAME?.trim() || null,
+  // Optional. When set, the first-access onboarding also asks for this code, so
+  // nobody else can claim the account between the deploy and your first visit.
+  setupToken: process.env.SETUP_TOKEN || null,
 };
 
 export const MIN_PASSWORD_LENGTH = 10;
