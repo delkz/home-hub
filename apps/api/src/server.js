@@ -1,11 +1,16 @@
+import cookieParser from 'cookie-parser';
 import express from 'express';
-import dotenv from 'dotenv';
+import helmet from 'helmet';
+import { ensureAdminUser } from './auth/bootstrap.js';
+import { requireAuth, requireCsrfHeader } from './auth/middleware.js';
+import { authRouter } from './auth/routes.js';
+import { purgeExpiredSessions } from './auth/sessions.js';
+import { config } from './lib/config.js';
+import { exposeError } from './lib/errors.js';
 import { prisma } from './lib/prisma.js';
 
-dotenv.config();
-
 const app = express();
-const port = Number(process.env.PORT || 3001);
+const port = config.port;
 
 const validMovementTypes = ['IN', 'OUT', 'ADJUSTMENT'];
 
@@ -21,24 +26,26 @@ const serializeInventory = (item) => ({
   minQuantity: item.minQuantity === null ? null : Number(item.minQuantity),
 });
 
-app.use(express.json());
+app.disable('x-powered-by');
+app.set('trust proxy', config.trustProxy);
+app.use(helmet());
+app.use(express.json({ limit: '100kb' }));
+app.use(cookieParser());
 
 app.get('/health', async (_req, res) => {
   try {
-    const now = await prisma.$queryRaw`SELECT NOW() AS current_time`;
-
-    res.json({
-      status: 'ok',
-      database: 'connected',
-      time: now[0].current_time,
-    });
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', database: 'connected' });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: error.message,
-    });
+    res.status(500).json({ status: 'error', message: exposeError(error) });
   }
 });
+
+app.use('/api', requireCsrfHeader);
+app.use('/api/auth', authRouter);
+
+// Everything below this line requires a signed-in user.
+app.use('/api', requireAuth);
 
 app.get('/api/hello', (_req, res) => {
   res.json({
@@ -54,7 +61,7 @@ app.get('/api/settings', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Unable to fetch settings',
-      error: error.message,
+      error: exposeError(error),
     });
   }
 });
@@ -82,7 +89,7 @@ app.put('/api/settings', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Unable to update settings',
-      error: error.message,
+      error: exposeError(error),
     });
   }
 });
@@ -110,7 +117,7 @@ app.get('/api/categories', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Unable to fetch categories',
-      error: error.message,
+      error: exposeError(error),
     });
   }
 });
@@ -126,7 +133,7 @@ app.get('/api/purchases', async (_req, res) => {
       items: purchase.items.map((item) => ({ ...item, quantity: Number(item.quantity) })),
     })));
   } catch (error) {
-    res.status(500).json({ message: 'Unable to fetch purchases', error: error.message });
+    res.status(500).json({ message: 'Unable to fetch purchases', error: exposeError(error) });
   }
 });
 
@@ -204,7 +211,7 @@ app.post('/api/purchases', async (req, res) => {
 
     res.status(201).json(result);
   } catch (error) {
-    res.status(error.statusCode || 500).json({ message: error.message || 'Unable to create purchase' });
+    res.status(error.statusCode || 500).json({ message: error.statusCode ? error.message : 'Unable to create purchase', error: error.statusCode ? undefined : exposeError(error) });
   }
 });
 
@@ -219,7 +226,7 @@ app.get('/api/inventory', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Unable to fetch inventory',
-      error: error.message,
+      error: exposeError(error),
     });
   }
 });
@@ -241,7 +248,7 @@ app.get('/api/inventory/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Unable to fetch inventory item',
-      error: error.message,
+      error: exposeError(error),
     });
   }
 });
@@ -303,7 +310,7 @@ app.post('/api/inventory', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Unable to create inventory item',
-      error: error.message,
+      error: exposeError(error),
     });
   }
 });
@@ -366,7 +373,7 @@ app.put('/api/inventory/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Unable to update inventory item',
-      error: error.message,
+      error: exposeError(error),
     });
   }
 });
@@ -384,7 +391,7 @@ app.get('/api/inventory/:id/movements', async (req, res) => {
 
     res.json(movements.map(serializeMovement));
   } catch (error) {
-    res.status(500).json({ message: 'Unable to fetch inventory movements', error: error.message });
+    res.status(500).json({ message: 'Unable to fetch inventory movements', error: exposeError(error) });
   }
 });
 
@@ -455,7 +462,8 @@ app.post('/api/inventory/:id/movements', async (req, res) => {
     res.status(201).json(result);
   } catch (error) {
     res.status(error.statusCode || 500).json({
-      message: error.message || 'Unable to create inventory movement',
+      message: error.statusCode ? error.message : 'Unable to create inventory movement',
+      error: error.statusCode ? undefined : exposeError(error),
     });
   }
 });
@@ -472,16 +480,35 @@ app.delete('/api/inventory/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Unable to delete inventory item',
-      error: error.message,
+      error: exposeError(error),
     });
   }
 });
 
-app.listen(port, '0.0.0.0', () => {
+app.use('/api', (_req, res) => {
+  res.status(404).json({ message: 'Not found' });
+});
+
+// eslint-disable-next-line no-unused-vars
+app.use((error, _req, res, _next) => {
+  if (error.type === 'entity.parse.failed') return res.status(400).json({ message: 'Invalid JSON body' });
+  if (error.type === 'entity.too.large') return res.status(413).json({ message: 'Request body too large' });
+  res.status(500).json({ message: 'Internal server error', error: exposeError(error) });
+});
+
+await ensureAdminUser();
+purgeExpiredSessions().catch(console.error);
+setInterval(() => purgeExpiredSessions().catch(console.error), 6 * 60 * 60 * 1000).unref();
+
+const server = app.listen(port, '0.0.0.0', () => {
   console.log(`API listening on http://localhost:${port}`);
 });
 
-process.on('SIGINT', async () => {
+const shutdown = async () => {
+  server.close();
   await prisma.$disconnect();
   process.exit(0);
-});
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
