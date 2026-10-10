@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="104" viewBox="0 0 360 104" fill="none" role="img" aria-labelledby="logo-title logo-description">
+  <title id="logo-title">Home Hub</title>
+  <desc id="logo-description">Logo tipográfico homehub em minúsculas, azul-escuro e azul, com fundo transparente.</desc>
+  <!-- V1: editable wordmark. Colors match the app's ink and primary tokens. -->
+  <text x="16" y="77" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="72" font-weight="750" letter-spacing="-3.5"><tspan fill="#0F172A">home</tspan><tspan fill="#2563EB">hub</tspan></text>
+</svg>

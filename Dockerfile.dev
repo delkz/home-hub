@@ -1,0 +1,11 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY . .
+
+RUN npm install --prefix ./apps/web && cd /app/apps/api && npm install && npx prisma generate
+
+EXPOSE 5173 3001 5432
+
+CMD ["sh", "-lc", "npm --prefix ./apps/web run dev -- --host 0.0.0.0 & cd /app/apps/api && npx prisma generate && npm run dev"]

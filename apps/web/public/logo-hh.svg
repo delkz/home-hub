@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="hh-title">
+  <title id="hh-title">Home Hub — HH</title>
+  <rect width="64" height="64" fill="#FFFFFF"/>
+  <!-- Outlined letters keep the monogram independent of installed fonts. -->
+  <path d="M8 16H15V28H23V16H30V48H23V35H15V48H8V16Z" fill="#0F172A"/>
+  <path d="M34 16H41V28H49V16H56V48H49V35H41V48H34V16Z" fill="#2563EB"/>
+</svg>

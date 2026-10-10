@@ -1,0 +1,145 @@
+generator client {
+  provider      = "prisma-client-js"
+  // native: dev machine; linux-musl: docker-compose dev (Alpine); rhel: Vercel functions.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum InventoryStatus {
+  OK
+  LOW
+  EMPTY
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  houseName String   @map("house_name") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model HouseInventory {
+  id             String              @id @default(cuid())
+  name           String              @db.VarChar(255)
+  icon           String              @default("📦") @db.Text
+  description    String?             @db.Text
+  quantity       Decimal             @default(0) @db.Decimal(10, 2)
+  unit           String              @default("unit") @db.VarChar(30)
+  status         InventoryStatus     @default(OK)
+  minQuantity    Decimal?            @db.Decimal(10, 2)
+  categoryId     String?             @map("category_id")
+  category       Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  lastPurchaseAt DateTime?           @map("last_purchase_at")
+  lastUpdatedAt  DateTime            @default(now()) @map("last_updated_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  movements      InventoryMovement[]
+  purchaseItems  PurchaseItem[]
+
+  @@index([status])
+  @@index([name])
+  @@index([categoryId])
+  @@map("house_inventory")
+}
+
+model Category {
+  id        String           @id @default(cuid())
+  name      String           @unique @db.VarChar(80)
+  icon      String           @default("📦") @db.Text
+  items     HouseInventory[]
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+model InventoryMovement {
+  id                String         @id @default(cuid())
+  inventoryId       String         @map("inventory_id")
+  inventory         HouseInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  purchaseId        String?        @map("purchase_id")
+  purchase          Purchase?      @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  type              MovementType
+  quantity          Decimal        @db.Decimal(10, 2)
+  previousQuantity  Decimal        @map("previous_quantity") @db.Decimal(10, 2)
+  resultingQuantity Decimal        @map("resulting_quantity") @db.Decimal(10, 2)
+  isPurchase        Boolean        @default(false) @map("is_purchase")
+  notes             String?        @db.Text
+  occurredAt        DateTime       @default(now()) @map("occurred_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  @@index([inventoryId, occurredAt])
+  @@index([purchaseId])
+  @@map("inventory_movements")
+}
+
+model Purchase {
+  id          String              @id @default(cuid())
+  purchasedAt DateTime            @default(now()) @map("purchased_at")
+  store       String?             @db.VarChar(160)
+  notes       String?             @db.Text
+  items       PurchaseItem[]
+  movements   InventoryMovement[]
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  @@index([purchasedAt])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id          String         @id @default(cuid())
+  purchaseId  String         @map("purchase_id")
+  purchase    Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  inventoryId String         @map("inventory_id")
+  inventory   HouseInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  quantity    Decimal        @db.Decimal(10, 2)
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  @@unique([purchaseId, inventoryId])
+  @@index([inventoryId])
+  @@map("purchase_items")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique @db.VarChar(255)
+  name         String?   @db.VarChar(120)
+  // Form of address used in greetings: "he" (Bem-vindo) or "she" (Bem-vinda).
+  pronouns     String    @default("he") @db.VarChar(3)
+  passwordHash String    @map("password_hash") @db.Text
+  lastLoginAt  DateTime? @map("last_login_at")
+  sessions     Session[]
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  // SHA-256 of the session token; the raw token only lives in the user's cookie.
+  tokenHash  String   @unique @map("token_hash") @db.VarChar(64)
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent  String?  @map("user_agent") @db.VarChar(255)
+  ip         String?  @db.VarChar(64)
+  expiresAt  DateTime @map("expires_at")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
