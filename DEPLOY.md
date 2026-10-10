@@ -1,9 +1,10 @@
 # Deploy
 
-Há dois caminhos prontos:
+Há três caminhos prontos:
 
-- **Vercel + Neon (recomendado para começar):** sem servidor para manter. A Vercel serve o front e roda a API como função serverless; o banco PostgreSQL fica no Neon (plano gratuito, com backup e TLS). Veja [Vercel](#vercel--neon).
-- **Servidor próprio (VPS) com Docker:** controle total e dados só na sua máquina. Veja [Servidor próprio](#servidor-próprio-vps).
+- **Oracle Cloud Always Free (recomendado):** uma VM gratuita para sempre, onde o `docker-compose.prod.yml` sobe tudo junto (site, API e banco), igual ao ambiente local. Veja [Oracle Cloud](#oracle-cloud-always-free).
+- **Qualquer servidor próprio (VPS) com Docker:** o mesmo stack em outro provedor. Veja [Servidor próprio](#servidor-próprio-vps).
+- **Vercel + Neon:** sem servidor para manter, mas o banco fica num serviço separado (Neon). Veja [Vercel](#vercel--neon).
 
 Netlify não tem suporte de primeira classe para uma API Express com Prisma, por isso a configuração pronta é para a Vercel.
 
@@ -19,6 +20,34 @@ Netlify não tem suporte de primeira classe para uma API Express com Prisma, por
 - **Rede (VPS)**: só o Caddy (portas 80/443) fica exposto. API e PostgreSQL ficam numa rede Docker interna, sem portas publicadas.
 - **Erros** em produção não devolvem detalhes internos (mensagens do Prisma etc.) ao navegador; eles vão só para o log.
 - **Segredos** só em variáveis de ambiente (`.env`, fora do git).
+
+## Oracle Cloud (Always Free)
+
+A conta Always Free da Oracle inclui uma VM ARM (até 4 CPUs e 24 GB de RAM) e 200 GB de disco sem custo. Ela roda o stack Docker inteiro.
+
+1. **Conta:** crie em [cloud.oracle.com](https://cloud.oracle.com) (pede cartão só para verificação; nada é cobrado nos recursos *Always Free*). Escolha a região São Paulo ou Vinhedo.
+2. **VM:** *Compute → Instances → Create instance*.
+   - Imagem: **Ubuntu 24.04**; shape: **VM.Standard.A1.Flex** (ARM), por exemplo 2 OCPUs e 12 GB.
+   - Envie sua chave SSH pública e anote o IP público.
+   - Se aparecer "out of capacity", tente outro *availability domain* ou mais tarde.
+3. **Liberar 80/443 na Oracle:** na sub-rede da VM, *Security List → Add Ingress Rules*: origem `0.0.0.0/0`, TCP, portas `80` e `443`.
+4. **Liberar 80/443 na própria VM** (a imagem Ubuntu da Oracle bloqueia via iptables; não use `ufw` aqui):
+   ```bash
+   sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+   sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+   sudo netfilter-persistent save
+   ```
+5. **Docker:**
+   ```bash
+   curl -fsSL https://get.docker.com | sudo sh
+   sudo usermod -aG docker $USER   # saia e entre de novo no SSH
+   ```
+6. **Domínio grátis:** crie um subdomínio no [DuckDNS](https://www.duckdns.org) (ex.: `minhacasa.duckdns.org`) apontando para o IP da VM. Ele vai no `DOMAIN` do `.env`, e o Caddy emite o certificado HTTPS sozinho.
+7. Siga a [primeira instalação](#primeira-instalação) abaixo.
+
+Observações:
+- A Oracle pode recuperar VMs *Always Free* que fiquem quase ociosas por 7 dias seguidos. Para evitar, converta a conta para *Pay As You Go* (continua sem custo enquanto você usar só recursos Always Free) e configure um alerta de orçamento de R$ 1.
+- Faça o [backup](#backup) com `cron` e guarde uma cópia fora da VM.
 
 ## Vercel + Neon
 
@@ -112,7 +141,11 @@ docker compose -f docker-compose.prod.yml exec -T db sh -c 'pg_dump -U "$POSTGRE
 gunzip -c homehub-AAAA-MM-DD.sql.gz | docker compose -f docker-compose.prod.yml exec -T db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'
 ```
 
-Um `cron` diário com o comando de geração já resolve o básico.
+Para um backup diário às 3h mantendo os últimos 14 dias, rode `crontab -e` e adicione (ajuste o caminho do projeto):
+
+```cron
+0 3 * * * cd $HOME/home-hub && mkdir -p backups && docker compose -f docker-compose.prod.yml exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > backups/homehub-$(date +\%F).sql.gz && find backups -name '*.sql.gz' -mtime +14 -delete
+```
 
 ## Desenvolvimento local
 
