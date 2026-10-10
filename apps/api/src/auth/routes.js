@@ -4,7 +4,7 @@ import { MIN_PASSWORD_LENGTH } from '../lib/config.js';
 import { burnPasswordCheck, hashPassword, verifyPassword } from '../lib/password.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from './middleware.js';
-import { createSession, destroySession } from './sessions.js';
+import { createSession, destroySession, purgeExpiredSessions } from './sessions.js';
 
 export const authRouter = Router();
 
@@ -41,6 +41,8 @@ authRouter.post('/login', loginLimiter, async (req, res, next) => {
 
     await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
     await createSession(res, req, user);
+    // Serverless deployments have no background timer, so clean up here too.
+    purgeExpiredSessions().catch(console.error);
 
     res.json({ user: { id: user.id, email: user.email, name: user.name } });
   } catch (error) {

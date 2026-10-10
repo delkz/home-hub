@@ -15,5 +15,6 @@
   "bugs": {
     "url": "https://github.com/delkz/home-hub/issues"
   },
-  "homepage": "https://github.com/delkz/home-hub#readme"
+  "homepage": "https://github.com/delkz/home-hub#readme",
+  "type": "module"
 }
