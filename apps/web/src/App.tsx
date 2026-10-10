@@ -9,6 +9,7 @@ import { Sidebar } from './components/dashboard/Sidebar'
 import { useInventory } from './hooks/useInventory'
 import { HomePage } from './pages/HomePage'
 import { InventoryPage } from './pages/InventoryPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { useUIStore } from './store/uiStore'
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage inventory={inventory} />} />
             <Route path="/inventory" element={<InventoryPage inventory={inventory} />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

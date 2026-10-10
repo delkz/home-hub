@@ -116,6 +116,8 @@ model User {
   id           String    @id @default(cuid())
   email        String    @unique @db.VarChar(255)
   name         String?   @db.VarChar(120)
+  // Form of address used in greetings: "he" (Bem-vindo) or "she" (Bem-vinda).
+  pronouns     String    @default("he") @db.VarChar(3)
   passwordHash String    @map("password_hash") @db.Text
   lastLoginAt  DateTime? @map("last_login_at")
   sessions     Session[]

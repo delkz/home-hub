@@ -27,6 +27,9 @@ const DEFAULT_CATEGORIES = [
   { name: 'Outros', icon: '📦' },
 ];
 
+export const PRONOUNS = ['he', 'she'];
+export const publicUser = (user) => ({ id: user.id, email: user.email, name: user.name, pronouns: user.pronouns });
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SETUP_LOCK_KEY = 4815162342;
 
@@ -53,6 +56,7 @@ authRouter.get('/setup', async (_req, res, next) => {
 authRouter.post('/setup', loginLimiter, async (req, res, next) => {
   try {
     const name = String(req.body?.name || '').trim();
+    const pronouns = String(req.body?.pronouns || '');
     const email = String(req.body?.email || '').trim().toLowerCase();
     const password = String(req.body?.password || '');
     const houseName = String(req.body?.houseName || '').trim();
@@ -60,7 +64,8 @@ authRouter.post('/setup', loginLimiter, async (req, res, next) => {
     if (!setupTokenMatches(req.body?.setupToken)) {
       return res.status(403).json({ message: 'Código de configuração inválido' });
     }
-    if (!name || name.length > 120) return res.status(400).json({ message: 'Informe seu nome' });
+    if (!name || name.length > 60) return res.status(400).json({ message: 'Informe seu nome (até 60 caracteres)' });
+    if (!PRONOUNS.includes(pronouns)) return res.status(400).json({ message: 'Escolha uma forma de tratamento' });
     if (!EMAIL_PATTERN.test(email) || email.length > 255) return res.status(400).json({ message: 'Informe um e-mail válido' });
     if (password.length < MIN_PASSWORD_LENGTH || password.length > 1024) {
       return res.status(400).json({ message: `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres` });
@@ -74,7 +79,7 @@ authRouter.post('/setup', loginLimiter, async (req, res, next) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`;
       if ((await tx.user.count()) > 0) throw new SetupClosedError();
 
-      const created = await tx.user.create({ data: { name, email, passwordHash, lastLoginAt: new Date() } });
+      const created = await tx.user.create({ data: { name, pronouns, email, passwordHash, lastLoginAt: new Date() } });
 
       if (houseName) {
         const setting = await tx.setting.findFirst();
@@ -90,7 +95,7 @@ authRouter.post('/setup', loginLimiter, async (req, res, next) => {
     });
 
     await createSession(res, req, user);
-    res.status(201).json({ user: { id: user.id, email: user.email, name: user.name } });
+    res.status(201).json({ user: publicUser(user) });
   } catch (error) {
     if (error instanceof SetupClosedError) {
       return res.status(409).json({ message: 'A conta principal já foi criada. Faça login.' });
@@ -125,7 +130,7 @@ authRouter.post('/login', loginLimiter, async (req, res, next) => {
     // Serverless deployments have no background timer, so clean up here too.
     purgeExpiredSessions().catch(console.error);
 
-    res.json({ user: { id: user.id, email: user.email, name: user.name } });
+    res.json({ user: publicUser(user) });
   } catch (error) {
     next(error);
   }

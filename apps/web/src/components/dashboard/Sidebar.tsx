@@ -1,5 +1,6 @@
-import { HomeIcon, PlusIcon, SparklesIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline'
+import { ArchiveBoxIcon, ArrowRightStartOnRectangleIcon, HomeIcon, PlusIcon, SparklesIcon, UserCircleIcon } from '@heroicons/react/24/outline'
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../auth/AuthContext'
 import { useUIStore } from '../../store/uiStore'
 import { Button } from '../ui/Button'
 
@@ -8,10 +9,12 @@ const links = [
   { label: 'Novo item', caption: 'Cadastrar estoque', icon: PlusIcon },
   { label: 'Estoque', caption: 'Lista completa', icon: ArchiveBoxIcon, to: '/inventory' },
   { label: 'Insights IA', caption: 'Previsões e alertas', icon: SparklesIcon },
+  { label: 'Meu perfil', caption: 'Nome e preferências', icon: UserCircleIcon, to: '/profile' },
 ]
 
 export function Sidebar() {
   const openNewItem = useUIStore((state) => state.openNewItem)
+  const { logout } = useAuth()
   return (
     <aside className="glass hidden min-h-[calc(100vh-3rem)] w-66 shrink-0 rounded-panel p-5 lg:flex lg:flex-col">
       <div className="mb-10 flex items-center gap-3 px-1">
@@ -32,6 +35,7 @@ export function Sidebar() {
       </nav>
 
       <Button className="mt-8 w-full justify-start" icon={<PlusIcon className="size-5" />} onClick={openNewItem}>Novo inventário</Button>
+      <Button className="mt-auto w-full justify-start" variant="ghost" icon={<ArrowRightStartOnRectangleIcon className="size-5" />} onClick={() => void logout()}>Sair</Button>
     </aside>
   )
 }

@@ -19,7 +19,6 @@ export function HomePage({ inventory }: HomePageProps) {
   const searchQuery = useUIStore((state) => state.searchQuery)
 
   const { user } = useAuth()
-  const firstName = user.name?.split(' ')[0]
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase('pt-BR')
   const visibleItems = normalizedSearch
     ? inventory.items.filter((item) => `${item.name} ${item.description ?? ''} ${item.unit} ${item.category?.name ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedSearch))
@@ -29,7 +28,7 @@ export function HomePage({ inventory }: HomePageProps) {
     <main className="grid gap-5 px-6 pt-7 pb-28 md:grid-cols-12 md:px-0 md:pb-8">
             <Card tone="ai" className="min-h-45 p-6 md:col-span-8">
               <p className="text-xs font-bold text-emerald-700">Casa em dia</p>
-              <h1 className="mt-3 text-3xl font-bold">{firstName ? `Olá, ${firstName}` : 'Olá'}</h1>
+              <h1 className="mt-3 text-3xl font-bold break-words">{user.pronouns === 'she' ? 'Bem-vinda' : 'Bem-vindo'}{user.name ? `, ${user.name}` : ''}</h1>
               <p className="mt-2 max-w-lg text-sm text-muted">Resumo rápido do estoque, compras e sinais importantes da casa.</p>
               {inventory.error ? <button type="button" className="mt-4 text-xs font-bold text-rose-700" onClick={() => void inventory.load()}>Falha ao carregar. Tentar novamente</button> : null}
             </Card>

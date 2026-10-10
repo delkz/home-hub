@@ -37,7 +37,7 @@ export async function findSession(req) {
 
   const session = await prisma.session.findUnique({
     where: { tokenHash: hashToken(token) },
-    include: { user: { select: { id: true, email: true, name: true } } },
+    include: { user: { select: { id: true, email: true, name: true, pronouns: true } } },
   });
 
   if (!session) return null;
