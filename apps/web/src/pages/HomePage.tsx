@@ -1,5 +1,6 @@
 import { PlusIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { InsightsCard } from '../components/dashboard/InsightsCard'
 import { InventoryList } from '../components/dashboard/InventoryList'
 import { QuickActionCard } from '../components/dashboard/QuickActionCard'
@@ -17,6 +18,8 @@ export function HomePage({ inventory }: HomePageProps) {
   const openPurchase = useUIStore((state) => state.openPurchase)
   const searchQuery = useUIStore((state) => state.searchQuery)
 
+  const { user } = useAuth()
+  const firstName = user.name?.split(' ')[0]
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase('pt-BR')
   const visibleItems = normalizedSearch
     ? inventory.items.filter((item) => `${item.name} ${item.description ?? ''} ${item.unit} ${item.category?.name ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedSearch))
@@ -26,7 +29,7 @@ export function HomePage({ inventory }: HomePageProps) {
     <main className="grid gap-5 px-6 pt-7 pb-28 md:grid-cols-12 md:px-0 md:pb-8">
             <Card tone="ai" className="min-h-45 p-6 md:col-span-8">
               <p className="text-xs font-bold text-emerald-700">Casa em dia</p>
-              <h1 className="mt-3 text-3xl font-bold">Bom dia, David</h1>
+              <h1 className="mt-3 text-3xl font-bold">{firstName ? `Olá, ${firstName}` : 'Olá'}</h1>
               <p className="mt-2 max-w-lg text-sm text-muted">Resumo rápido do estoque, compras e sinais importantes da casa.</p>
               {inventory.error ? <button type="button" className="mt-4 text-xs font-bold text-rose-700" onClick={() => void inventory.load()}>Falha ao carregar. Tentar novamente</button> : null}
             </Card>
