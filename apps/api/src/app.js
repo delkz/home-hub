@@ -6,6 +6,7 @@ import { authRouter } from './auth/routes.js';
 import { config } from './lib/config.js';
 import { exposeError } from './lib/errors.js';
 import { prisma } from './lib/prisma.js';
+import { profileRouter } from './profile.js';
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/auth', authRouter);
 
 // Everything below this line requires a signed-in user.
 app.use('/api', requireAuth);
+app.use('/api/profile', profileRouter);
 
 app.get('/api/hello', (_req, res) => {
   res.json({

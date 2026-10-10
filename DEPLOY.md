@@ -27,7 +27,7 @@ O Home Hub roda na **Vercel** (front estático + API Express como função serve
    - `SETUP_TOKEN` (opcional, recomendado): um código qualquer, por exemplo o resultado de `openssl rand -hex 8`. A tela de boas-vindas pede esse código, então ninguém consegue criar a conta antes de você.
    - `SESSION_TTL_DAYS=30` (opcional)
 4. **Deploy.** O build gera o Prisma Client, aplica as migrações no banco e compila o front.
-5. **Crie sua conta.** Abra `https://<seu-projeto>.vercel.app` logo após o deploy. A tela "Bem-vindo" pede seu nome, e-mail, senha (mínimo de 10 caracteres) e o nome da casa, cria as categorias padrão e já entra no app.
+5. **Crie sua conta.** Abra `https://<seu-projeto>.vercel.app` logo após o deploy. O onboarding "Bem-vindo ao Home Hub" pede, em três passos, seu nome, como você quer ser tratado (ele/ela) e o e-mail e senha de acesso (mínimo de 10 caracteres). Ele cria as categorias padrão e já entra no app. Nome, tratamento e senha podem ser alterados depois em **Meu perfil**.
 
 Observações:
 - Cada deploy aplica migrações pendentes no banco configurado. Se usar deploys de *preview*, configure um banco (ou branch do Neon) separado para o ambiente *Preview*.
