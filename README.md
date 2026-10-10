@@ -385,7 +385,7 @@ Example command:
 docker compose up -d
 ```
 
-To deploy it (Vercel + Neon, or your own server with Docker) with HTTPS and login, see [DEPLOY.md](DEPLOY.md).
+To deploy it on Vercel + Neon with HTTPS and login, see [DEPLOY.md](DEPLOY.md).
 
 Then the application can be accessed via:
 

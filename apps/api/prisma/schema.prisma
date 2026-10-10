@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  // native: dev machine; linux-musl: Docker (Alpine); rhel: Vercel functions.
+  // native: dev machine; linux-musl: docker-compose dev (Alpine); rhel: Vercel functions.
   binaryTargets = ["native", "linux-musl-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 

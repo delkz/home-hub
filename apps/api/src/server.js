@@ -1,4 +1,4 @@
-// Long-running server (Docker / VPS / local dev). On Vercel, api/[...path].js
+// Long-running server for local development. On Vercel, api/index.js
 // imports app.js directly instead.
 import app from './app.js';
 import { purgeExpiredSessions } from './auth/sessions.js';

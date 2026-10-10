@@ -15,7 +15,7 @@ const parseTrustProxy = (value) => {
 export const config = {
   isProduction,
   port: Number(process.env.PORT || 3001),
-  // Number of reverse proxies in front of the API (Caddy in docker-compose.prod.yml).
+  // Number of reverse proxies in front of the API (1 on Vercel).
   // Needed so req.ip / req.secure reflect the real client and HTTPS.
   trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
   sessionTtlDays: Number(process.env.SESSION_TTL_DAYS || 30),
