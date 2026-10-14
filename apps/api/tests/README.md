@@ -11,3 +11,11 @@ npm test
 ```
 
 Sem `TEST_DATABASE_URL`, o teste é ignorado.
+
+## A fazer
+
+Os testes de estoque ainda não existem e são prioridade antes do v0.2 (a conta de quantidades é o produto):
+
+- criar compra (`POST /api/purchases`): quantidades, movimentos de entrada e data da última compra
+- criar movimentação (`POST /api/inventory/:id/movements`): saldo anterior/resultante
+- cálculo de estoque baixo (`status` LOW/EMPTY a partir de `minQuantity`)

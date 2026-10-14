@@ -39,6 +39,10 @@ Observações:
   ```
 - Dados de exemplo e categorias padrão (opcional): `DATABASE_URL="<string direta>" npm run prisma:seed` em `apps/api`.
 - Backup: o Neon guarda histórico com restauração por ponto no tempo. Para uma cópia sua: `pg_dump "<string direta>" | gzip > homehub-$(date +%F).sql.gz`.
+- **Backup é sua responsabilidade.** O histórico de movimentações é o ativo mais valioso do app. Faça um `pg_dump` agora e **teste a restauração** em um banco descartável (`gunzip -c homehub-AAAA-MM-DD.sql.gz | psql "<string de um banco de teste>"`); depois repita periodicamente (por exemplo, a cada mês). Uma cópia que nunca foi restaurada não conta como backup.
+- **Plano gratuito do Neon:** o banco suspende por inatividade, então o primeiro acesso depois de um tempo parado pode demorar alguns segundos (cold start). Confira também os limites de armazenamento e de histórico do plano.
+- **Limitação conhecida:** o app precisa de internet. Modo offline/PWA está no backlog (veja o README).
+- **Congelado:** a autenticação não recebe novas funcionalidades até o teste de 4 semanas de uso passar (veja "Status" no README).
 
 ## Desenvolvimento local
 
